@@ -12,7 +12,16 @@ module Routo
     def send_sms *numbers
       options = numbers.last.is_a?(Hash) ? numbers.last : {}
       recipients = numbers.map{|n| Number.new(n)}
-      parse_response(Net::HTTP.post_form(URI.parse(Routo.http_api_url), params(*recipients, options)))
+      begin
+        parse_response(Net::HTTP.post_form(URI.parse(Routo.http_api_url), params(*recipients, options)))
+      rescue Routo::Exception::SystemError, Routo::Exception::Failed # trying with backup url if Routo returns an internal error
+        begin # here a mail error should not prevent the sms to be send
+          Pony.mail(:to => Routo.email, :subject => Routo.using_backup_url[:subject], :body => Routo.using_backup_url[:body]) if Routo.email && Routo.using_backup_url.present? && Routo.using_backup_url_sent_at.to_i<(Time.now.to_i-Routo.seconds_between_mails)
+          Routo.using_backup_url_sent_at = Time.now
+        ensure
+          parse_response(Net::HTTP.post_form(URI.parse(Routo.http_api_url_backup), params(*recipients, options)))
+        end
+      end
     end
 
     private
@@ -37,21 +46,21 @@ module Routo
       Rails.logger.debug "body: "+rep.body.inspect
       Rails.logger.debug "msg: "+rep.message.inspect
       case rep.body
-        when /success/i         then return true
-        when /error/i           then raise Routo::Exception::Error.new(rep.body)
-        when /auth_failed/i     then raise Routo::Exception::AuthFailed.new(rep.body)
-        when /wrong_number/i    then raise Routo::Exception::WrongNumber.new(rep.body)
-        when /not_allowed/i     then raise Routo::Exception::NotAllowed.new(rep.body)
-        when /too_many_numbers/i then raise Routo::Exception::TooManyNumbers.new(rep.body)
-        when /no_message/i      then raise Routo::Exception::NoMessage.new(rep.body)
-        when /too_long/i        then raise Routo::Exception::TooLong.new(rep.body)
-        when /wrong_type/i      then raise Routo::Exception::WrongType.new(rep.body)
-        when /wrong_message/i   then raise Routo::Exception::WrongMessage.new(rep.body)
-        when /wrong_format/i    then raise Routo::Exception::WrongFormat.new(rep.body)
-        when /bad_operator/i    then raise Routo::Exception::BadOperator.new(rep.body)
-        when /failed/i          then raise Routo::Exception::Failed.new(rep.body)
-        when /sys_error/i       then raise Routo::Exception::SystemError.new(rep.body)
-        when /no credits left/i then raise Routo::Exception::NoCreditsLeft.new(rep.body)
+        when /success/i           then return true
+        when /error/i             then raise Routo::Exception::Error.new(rep.body)
+        when /auth_failed/i       then raise Routo::Exception::AuthFailed.new(rep.body)
+        when /wrong_number/i      then raise Routo::Exception::WrongNumber.new(rep.body)
+        when /not_allowed/i       then raise Routo::Exception::NotAllowed.new(rep.body)
+        when /too_many_numbers/i  then raise Routo::Exception::TooManyNumbers.new(rep.body)
+        when /no_message/i        then raise Routo::Exception::NoMessage.new(rep.body)
+        when /too_long/i          then raise Routo::Exception::TooLong.new(rep.body)
+        when /wrong_type/i        then raise Routo::Exception::WrongType.new(rep.body)
+        when /wrong_message/i     then raise Routo::Exception::WrongMessage.new(rep.body)
+        when /wrong_format/i      then raise Routo::Exception::WrongFormat.new(rep.body)
+        when /bad_operator/i      then raise Routo::Exception::BadOperator.new(rep.body)
+        when /failed/i            then raise Routo::Exception::Failed.new(rep.body)
+        when /sys_error/i         then raise Routo::Exception::SystemError.new(rep.body)
+        when /no credits left/i   then raise Routo::Exception::NoCreditsLeft.new(rep.body)
         else raise Routo::Exception::Base.new(rep.body)
       end
     end

@@ -18,4 +18,6 @@ Gem::Specification.new do |s|
   s.email = 'arambert@weboglobin.com'
   s.homepage = 'http://www.weboglobin.com'
 
+  s.add_dependency('pony', '>= 1.0.0')
+
 end
