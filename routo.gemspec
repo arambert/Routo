@@ -1,11 +1,11 @@
-version = "0.0.1"
+version = "0.0.2"
 
 Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
   s.name = 'routo'
   s.version = version
   s.summary = 'Sending sms with Routo Messaging.'
-  s.description = 'Sending sms with Routo Messaging.'
+  s.description = 'Sending sms with Routo Messaging HTTP API.'
 
   s.files = Dir['README.md', 'lib/**/*']
   s.require_path = 'lib'
