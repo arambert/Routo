@@ -11,7 +11,7 @@ module Routo
     end
 
     def send_sms *numbers
-      options = numbers.last.is_a?(Hash) ? numbers.last : {}
+      options = numbers.last.is_a?(Hash) ? numbers.pop : {}
       @recipients = numbers.map{|n| Number.new(n)}
       begin
         parse_response(Net::HTTP.post_form(URI.parse(Routo.http_api_url), params(options)))
@@ -29,10 +29,10 @@ module Routo
 
     def params options
       {:user => Routo.username,
-       :pass => URI.encode(Routo.password),
+       :pass => Routo.password,
        :number => @recipients.map(&:number).join(','),
        :ownnum => Routo.ownnum,
-       :message => URI.encode(@text),
+       :message => @text,
        :type => Routo.type,
        :delivery => Routo.delivery,
        :mess_id => @mess_id}.merge(options)
