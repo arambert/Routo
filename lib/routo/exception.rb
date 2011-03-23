@@ -2,7 +2,8 @@ module Routo
 
   module Exception
     class Base < ::Exception
-      def initialize msg
+      def initialize message, body
+        msg = "[number=#{message.recipients}] #{msg}"
         super(msg)
       end
     end

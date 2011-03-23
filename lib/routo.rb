@@ -42,5 +42,11 @@ module Routo
   def self.send_sms msg, *numbers
     Message.new(msg).send_sms(*numbers)
   end
+
+  # not tested
+  def self.balance
+    balance = open("http://smsc5.routotelecom.com/balance.php?username=#{URI.encode(Routo.username)}=&password=#{URI.encode(Routo.password)}")
+    balance.to_i
+  end
   
 end
